@@ -29,11 +29,10 @@ const argv = yargs(hideBin(process.argv))
   .scriptName("mcp-server-azuredevops")
   .usage("Usage: $0 <organization> [options]")
   .version(packageVersion)
-  .command("$0 <organization> [options]", "Azure DevOps MCP Server", (yargs) => {
+  .command("$0 [organization] [options]", "Azure DevOps MCP Server", (yargs) => {
     yargs.positional("organization", {
-      describe: "Azure DevOps organization name",
+      describe: "Azure DevOps organization name (or set ADO_ORG env var)",
       type: "string",
-      demandOption: true,
     });
   })
   .option("domains", {
@@ -58,7 +57,12 @@ const argv = yargs(hideBin(process.argv))
   .help()
   .parseSync();
 
-export const orgName = argv.organization as string;
+const _orgName = (argv.organization as string) || process.env.ADO_ORG;
+if (!_orgName) {
+  logger.error("Organization name is required. Provide it as a CLI argument or set ADO_ORG environment variable.");
+  process.exit(1);
+}
+export const orgName: string = _orgName;
 const orgUrl = "https://dev.azure.com/" + orgName;
 
 const domainsManager = new DomainsManager(argv.domains);
